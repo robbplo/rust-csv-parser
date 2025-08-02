@@ -33,10 +33,6 @@ impl PartialEq<Vec<&str>> for CsvLine {
 }
 
 impl Csv {
-    fn header(&self) -> &CsvLine {
-        &self.lines[0]
-    }
-
     fn line_to_vec(line: &str) -> CsvLine {
         let values: Vec<String> = line
             .split(',')

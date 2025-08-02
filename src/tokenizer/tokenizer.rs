@@ -117,7 +117,11 @@ fn it_handles_multiple_char_fields() {
 
 #[test]
 fn it_handles_quoted_fields() {
-    let mut t = CsvTokenizer::new("\"abc,def\",\"123\n456\"", ',');
+    let mut t = CsvTokenizer::new(
+        r#""abc,def","123
+456""#,
+        ',',
+    );
     assert_eq!(t.next(), Some(CsvToken::Field("abc,def")));
     assert_eq!(t.next(), Some(CsvToken::Delimiter));
     assert_eq!(t.next(), Some(CsvToken::Field("123\n456")));

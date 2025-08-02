@@ -31,16 +31,18 @@ impl<'a> Iterator for CsvTokenizer<'a> {
                 self.position += 1;
                 Some(CsvToken::Newline)
             }
-            Some(char) => {
-                if *char == self.delimiter as u8 {
+            Some(byte) => {
+                if *byte == self.delimiter as u8 {
                     self.position += 1;
                     Some(CsvToken::Delimiter)
                 } else {
-                    let length = self.chars_until_end_of_field();
+                    let is_quoted = *byte as char == '"';
+                    let skip = if is_quoted { 1 } else { 0 };
+                    let length = self.chars_until_end_of_field(is_quoted);
                     let result = Some(CsvToken::Field(
-                        &self.input[self.position..self.position + length],
+                        &self.input[self.position + skip..self.position + length],
                     ));
-                    self.position += length;
+                    self.position += length + skip;
                     result
                 }
             }
@@ -59,13 +61,18 @@ impl CsvTokenizer<'_> {
         self.input.as_bytes().get(self.position + i)
     }
 
-    fn chars_until_end_of_field(&self) -> usize {
+    fn chars_until_end_of_field(&self, quoted: bool) -> usize {
         let mut i = 1;
         loop {
-            match self.get_offset(i) {
-                None => break,
-                Some(byte) => {
+            match (self.get_offset(i), quoted) {
+                (None, _) => break,
+                (Some(byte), false) => {
                     if *byte as char == self.delimiter || *byte == b'\n' {
+                        break;
+                    }
+                }
+                (Some(byte), true) => {
+                    if *byte as char == '"' {
                         break;
                     }
                 }
@@ -105,5 +112,14 @@ fn it_handles_multiple_char_fields() {
     assert_eq!(t.next(), Some(CsvToken::Field("abc")));
     assert_eq!(t.next(), Some(CsvToken::Delimiter));
     assert_eq!(t.next(), Some(CsvToken::Field("def")));
+    assert_eq!(t.next(), None);
+}
+
+#[test]
+fn it_handles_quoted_fields() {
+    let mut t = CsvTokenizer::new("\"abc,def\",\"123\n456\"", ',');
+    assert_eq!(t.next(), Some(CsvToken::Field("abc,def")));
+    assert_eq!(t.next(), Some(CsvToken::Delimiter));
+    assert_eq!(t.next(), Some(CsvToken::Field("123\n456")));
     assert_eq!(t.next(), None);
 }

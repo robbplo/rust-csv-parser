@@ -2,15 +2,6 @@ use std::env;
 use std::fs;
 use std::io;
 
-#[derive(Debug, PartialEq)]
-struct Csv {
-    lines: Vec<CsvLine>,
-}
-
-#[derive(Debug, PartialEq)]
-struct CsvLine {
-    values: Vec<String>,
-}
 
 impl From<String> for Csv {
     fn from(val: String) -> Self {

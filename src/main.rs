@@ -2,27 +2,21 @@ use std::env;
 use std::fs;
 use std::io;
 
-#[derive(Debug)]
-enum CsvValue {
-    String(String),
-    Integer(i64),
-    Float(f64),
-    Null,
+#[derive(Debug, PartialEq)]
+struct Csv {
+    lines: Vec<CsvLine>,
 }
 
-#[derive(Debug)]
-struct Csv {
-    header: Vec<String>,
-    items: Vec<Vec<String>>,
+#[derive(Debug, PartialEq)]
+struct CsvLine {
+    values: Vec<String>,
 }
 
 impl From<String> for Csv {
     fn from(val: String) -> Self {
-        let mut lines = val.trim().lines();
-        let header: Vec<String> = Csv::line_to_vec(lines.next().expect("no first line"));
-        let items: Vec<Vec<String>> = lines.map(|x| Csv::line_to_vec(x)).collect();
+        let items: Vec<CsvLine> = val.trim().lines().map(Csv::line_to_vec).collect();
 
-        Csv { header, items }
+        Csv { lines: items }
     }
 }
 
@@ -32,9 +26,23 @@ impl From<&str> for Csv {
     }
 }
 
+impl PartialEq<Vec<&str>> for CsvLine {
+    fn eq(&self, other: &Vec<&str>) -> bool {
+        self.values == *other
+    }
+}
+
 impl Csv {
-    fn line_to_vec(line: &str) -> Vec<String> {
-        line.split(',').map(|x| x.to_owned()).collect()
+    fn header(&self) -> &CsvLine {
+        &self.lines[0]
+    }
+
+    fn line_to_vec(line: &str) -> CsvLine {
+        let values: Vec<String> = line
+            .split(',')
+            .map(|x| x.trim_matches('"').to_owned())
+            .collect();
+        CsvLine { values }
     }
 }
 
@@ -57,6 +65,27 @@ val1,val2,val3";
 
     let csv: Csv = input.into();
 
-    assert_eq!(csv.header, vec!["head1", "head2", "head3"]);
-    assert_eq!(csv.items, vec![vec!["val1", "val2", "val3"]]);
+    assert_eq!(
+        csv.lines,
+        vec![
+            vec!["head1", "head2", "head3"],
+            vec!["val1", "val2", "val3"]
+        ]
+    );
+}
+
+#[test]
+fn it_parses_csv_with_quoted_values() {
+    let input = r#"head1","head2","head3"
+"val1","val2","val3""#;
+
+    let csv: Csv = input.into();
+
+    assert_eq!(
+        csv.lines,
+        vec![
+            vec!["head1", "head2", "head3"],
+            vec!["val1", "val2", "val3"]
+        ]
+    );
 }

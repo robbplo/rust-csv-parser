@@ -1,14 +1,14 @@
 use core::panic;
 
-use crate::tokenizer::{self, CsvToken, CsvTokenizer};
+use crate::tokenizer::{CsvToken, CsvTokenizer};
 
 #[derive(Debug, PartialEq)]
-struct Csv {
+pub struct Csv {
     lines: Vec<CsvLine>,
 }
 
 #[derive(Debug, PartialEq)]
-struct CsvLine {
+pub struct CsvLine {
     values: Vec<String>,
 }
 
@@ -21,10 +21,6 @@ impl CsvParser<'_> {
     pub fn new(tokenizer: CsvTokenizer) -> CsvParser {
         CsvParser { tokenizer }
     }
-
-    // pub fn parse_string(&self, input: &str) -> Csv {
-    //     let mut lines: Vec<CsvLine> = vec![];
-    // }
 
     pub fn get_line(&mut self) -> CsvLine {
         let values: Vec<String> = self
